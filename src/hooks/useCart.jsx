@@ -14,10 +14,10 @@ const useCart = () => {
         //         headers:{
         //             authorization: `bearer ${token}`
         //         }
-        //     })
+        //     }) 
         //     return res.json();
         // },
-
+ 
         queryFn: async () => {
             const res = await axiosSecure(`/carts?email=${user?.email}`)
             console.log('res from axios',res);

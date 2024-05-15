@@ -1,11 +1,14 @@
 import React from 'react';
 import SectionTitle from '../../../components/SectionTitle/SectionTitle';
 import { useForm } from 'react-hook-form';
+import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import Swal from 'sweetalert2';
 
 
 const img_hosting_token = import.meta.env.VITE_Image_Upload_Token;
 const AddItem = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit,reset } = useForm();
+    const[axiosSecure]=useAxiosSecure();
 
     const img_hosting_url = `https://api.imgbb.com/1/upload?key=${img_hosting_token}`;
 
@@ -21,15 +24,29 @@ const AddItem = () => {
             .then(res => res.json())
             .then(imageResponse => {
                 console.log(imageResponse);
-                if(imageResponse.success){
-                    const imgURL=imageResponse.data.display_url;
-                    const {name,price,category,recipe}=data;
-                    const newItem={name,price:parseFloat(price),category,recipe,image:imgURL};
+                if (imageResponse.success) {
+                    const imgURL = imageResponse.data.display_url;
+                    const { name, price, category, recipe } = data;
+                    const newItem = { name, price: parseFloat(price), category, recipe, image: imgURL };
                     console.log(newItem);
+                    axiosSecure.post('/menu',newItem)
+                    .then(data=>{
+                        console.log('after posting new menu item',data.data);
+                        if(data.data.insertedId){
+                            reset();
+                            Swal.fire({
+                                position: "top-end",
+                                icon: "success",
+                                title: "Menu Item successfully",
+                                showConfirmButton: false,
+                                timer: 1500
+                              });
+                        }
+                    })
                 }
             })
     };
-    console.log(errors);
+    // console.log(errors);
 
     return (
         <div className='w-full px-10'>
@@ -73,7 +90,7 @@ const AddItem = () => {
                         <span className="label-text">Recipe Details</span>
                     </label>
                     <textarea className="textarea textarea-bordered h-24"
-                        {...register("Recipe", { required: true })}
+                        {...register("recipe", { required: true })}
                         placeholder="Recipe"></textarea>
                 </div>
                 <div className="form-control w-full my-4">

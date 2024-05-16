@@ -1,10 +1,26 @@
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import useAuth from '../../../hooks/useAuth';
 
-const CheckoutForm = ({price}) => {
+const CheckoutForm = ({ price }) => {
     const stripe = useStripe();
     const elements = useElements();
-    const [cardError,setCardError]=useState('');
+    const [cardError, setCardError] = useState('');
+    const [axiosSecure] = useAxiosSecure();
+    const [clientSecret, setClientSecret] = useState('');
+    const { user } = useAuth();
+
+
+    useEffect(() => {
+        axiosSecure.post('/create-payment-intent', { price })
+            .then(res => {
+                console.log(res.data.clientSecret);
+                setClientSecret(res.data.clientSecret);
+
+            })
+    }, [price, axiosSecure])
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         if (!stripe || !elements) {
@@ -23,13 +39,35 @@ const CheckoutForm = ({price}) => {
         });
 
 
+
         if (error) {
             console.log('error', error);
             setCardError(error.message)
         } else {
-            console.log('PaymentMethod', paymentMethod);
             setCardError('')
+            console.log('PaymentMethod', paymentMethod);
         }
+
+        const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
+            clientSecret,
+            {
+                payment_method: {
+                    card: card,
+                    billing_details: {
+                        email: user?.email || "unknown",
+                        name: user?.displayName || 'anonymous',
+                    },
+                },
+            },
+        );
+
+
+        if(confirmError) {
+            console.log(confirmError);
+        }
+
+        console.log(paymentIntent);
+
     }
     return (
         <>
@@ -50,11 +88,11 @@ const CheckoutForm = ({price}) => {
                         },
                     }}
                 />
-                <button type="submit" className='btn  btn-primary btn-sm mt-4' disabled={!stripe}>
+                <button type="submit" className='btn  btn-primary btn-sm mt-4' disabled={!stripe || !clientSecret}>
                     Pay
                 </button>
             </form>
-            {cardError&& <p className='text-red-600 mt-8'>{cardError}</p> }
+            {cardError && <p className='text-red-600 mt-8'>{cardError}</p>}
         </>
     );
 };

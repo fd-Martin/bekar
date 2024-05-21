@@ -11,9 +11,7 @@ const CheckoutForm = ({ price, cart }) => {
     const [clientSecret, setClientSecret] = useState('');
     const { user } = useAuth();
     const [processing, setProcessing] = useState(false);
-    const [transantionId, setTransactionId] = useState('');
-
-
+    const [transactionId, setTransactionId] = useState('');
 
     useEffect(() => {
         console.log(price);
@@ -29,6 +27,7 @@ const CheckoutForm = ({ price, cart }) => {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+
         if (!stripe || !elements) {
             return
         }
@@ -37,14 +36,13 @@ const CheckoutForm = ({ price, cart }) => {
         if (card === null) {
             return
         }
+
         console.log('card', card);
 
         const { error } = await stripe.createPaymentMethod({
             type: 'card',
             card,
         });
-
-
 
         if (error) {
             console.log('error', error);
@@ -75,13 +73,16 @@ const CheckoutForm = ({ price, cart }) => {
         }
 
         console.log('payment intent', paymentIntent);
+
         setProcessing(false)
+
         if (paymentIntent.status === 'succeeded') {
             setTransactionId(paymentIntent.id)
-            // const transantionId=paymentIntent.id;
+            // const transactionId=paymentIntent.id;
+            
             const payment = {
                 email: user?.email,
-                transantionId: paymentIntent.id,
+                transactionId: paymentIntent.id,
                 price,
                 date: new Date(),
                 quantity: cart.length,
@@ -97,7 +98,6 @@ const CheckoutForm = ({ price, cart }) => {
                         // display confirm 
                     }
                 })
-
         }
     }
 
@@ -125,7 +125,7 @@ const CheckoutForm = ({ price, cart }) => {
                 </button>
             </form>
             {cardError && <p className='text-red-600 mt-8'>{cardError}</p>}
-            {transantionId && <p className='text-green-600'>Transantion complete with transactionId:{transantionId}</p>}
+            {transactionId && <p className='text-green-600'>Transantion complete with transactionId:{transactionId}</p>}
 
         </>
     );
